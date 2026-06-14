@@ -109,22 +109,33 @@ def split_into_sections(text: str) -> list[tuple[str, str]]:
     if not matches:
         return [("Full Filing", text)]
 
-    # Build candidate spans: each heading owns text up to the next heading.
-    bounds = [m.start() for m in matches] + [len(text)]
-    best: dict[str, tuple[int, str]] = {}  # item_id -> (span_len, body)
-    for i, m in enumerate(matches):
+    # Collapse runs of the SAME item id (repeated page-header noise inside a
+    # section, e.g. "Item 8" stamped on every page of the financials) so the
+    # section spans from its first heading to the next *different* item.
+    collapsed: list[tuple[str, int]] = []
+    for m in matches:
         item_id = m.group(1).upper()
-        body = text[m.start() : bounds[i + 1]].strip()
-        if item_id not in best or len(body) > best[item_id][0]:
-            best[item_id] = (len(body), body)
+        if collapsed and collapsed[-1][0] == item_id:
+            continue
+        collapsed.append((item_id, m.start()))
 
-    sections = [
-        (ITEM_NAMES.get(item_id, f"Item {item_id}"), body)
-        for item_id, (length, body) in best.items()
-        if length >= MIN_SECTION_CHARS
-    ]
-    # Order by appearance in the document for readability.
-    sections.sort(key=lambda sb: text.find(sb[1][:80]))
+    # Build candidate spans: each heading owns text up to the next heading.
+    bounds = [off for _, off in collapsed] + [len(text)]
+    best: dict[str, tuple[int, str, int]] = {}  # item_id -> (span_len, body, offset)
+    for i, (item_id, off) in enumerate(collapsed):
+        body = text[off : bounds[i + 1]].strip()
+        if item_id not in best or len(body) > best[item_id][0]:
+            best[item_id] = (len(body), body, off)
+
+    sections = sorted(
+        (
+            (offset, ITEM_NAMES.get(item_id, f"Item {item_id}"), body)
+            for item_id, (length, body, offset) in best.items()
+            if length >= MIN_SECTION_CHARS
+        ),
+        key=lambda x: x[0],  # document order
+    )
+    sections = [(name, body) for _, name, body in sections]
 
     if len(sections) < 3:
         return [("Full Filing", text)]
