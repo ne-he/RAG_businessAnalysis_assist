@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FinSight — SEC 10-K RAG</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+           background: #0b0e14; color: #d7dce5; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 28px 18px 64px; }
+    h1 { font-size: 20px; margin: 0 0 2px; }
+    .sub { color: #8b93a7; font-size: 13px; margin-bottom: 20px; }
+    .row { display: flex; gap: 8px; margin-bottom: 16px; }
+    input { flex: 1; padding: 11px 13px; border-radius: 9px; border: 1px solid #232838;
+            background: #11151f; color: #eef1f6; font-size: 14px; }
+    button { padding: 11px 18px; border-radius: 9px; border: 0; background: #2f6df6; color: #fff;
+             font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+    .answer { white-space: pre-wrap; background: #11151f; border: 1px solid #1d2230;
+              border-radius: 11px; padding: 16px; min-height: 48px; }
+    .meta { margin-top: 12px; font-size: 12.5px; color: #8b93a7; }
+    .tag { display:inline-block; padding:2px 8px; border-radius:6px; background:#1a2030; margin:3px 5px 0 0; }
+    .gated { color: #e0a23b; }
+    .ok { color: #46c08d; }
+    .examples { margin-top: 14px; font-size: 12.5px; color: #6f7892; }
+    .examples a { color: #6f9bff; cursor: pointer; text-decoration: none; margin-right: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>FinSight</h1>
+    <div class="sub">Ask about NVDA / AAPL / MSFT — answers grounded in their latest SEC 10-K, with citations.</div>
+
+    <div class="row">
+      <input id="q" placeholder="e.g. What are NVIDIA's main risk factors?" />
+      <button id="go">Ask</button>
+    </div>
+
+    <div id="answer" class="answer">Answers will stream here…</div>
+    <div id="meta" class="meta"></div>
+
+    <div class="examples">
+      Try:
+      <a data-q="What are NVIDIA's main risk factors?">NVDA risks</a>
+      <a data-q="How does Apple describe its revenue trends?">AAPL revenue</a>
+      <a data-q="What does Microsoft say about cloud / Azure?">MSFT cloud</a>
+      <a data-q="What is the airspeed velocity of an unladen swallow?">out-of-scope</a>
+    </div>
+  </div>
+
+  <script>
+    const API = location.origin.includes("file") ? "http://localhost:8000" : location.origin;
+    const $ = (id) => document.getElementById(id);
+
+    async function ask(question) {
+      $("answer").textContent = "";
+      $("meta").innerHTML = "";
+      $("go").disabled = true;
+      try {
+        const resp = await fetch(API + "/chat/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: question, history: [] }),
+        });
+        const reader = resp.body.getReader();
+        const dec = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const parts = buf.split("\n\n");
+          buf = parts.pop();
+          for (const p of parts) {
+            const line = p.replace(/^data: /, "");
+            if (!line.trim()) continue;
+            const ev = JSON.parse(line);
+            if (ev.type === "sources") renderMeta(ev);
+            else if (ev.type === "token") $("answer").textContent += ev.text;
+            else if (ev.type === "done") addLatency(ev.latency_ms);
+          }
+        }
+      } catch (e) {
+        $("answer").textContent = "Error: " + e.message + "\n\nIs the API running? (uvicorn app.main:app)";
+      } finally {
+        $("go").disabled = false;
+      }
+    }
+
+    function renderMeta(ev) {
+      const cls = ev.gated ? "gated" : "ok";
+      const label = ev.gated ? "⚠ not found in filings (gated)" : "✓ grounded";
+      let html = `<span class="${cls}">${label}</span> · top_cosine=${ev.top_cosine}`;
+      const f = ev.filters || {};
+      if ((f.tickers && f.tickers.length) || (f.years && f.years.length))
+        html += ` · filter=${(f.tickers||[]).join(",")} ${(f.years||[]).join(",")}`;
+      html += "<br/>";
+      (ev.sources || []).forEach((s) => { html += `<span class="tag">${s.citation}</span>`; });
+      $("meta").innerHTML = html;
+    }
+    function addLatency(ms) { $("meta").innerHTML += `<div style="margin-top:6px">latency ${ms} ms</div>`; }
+
+    $("go").onclick = () => { const q = $("q").value.trim(); if (q) ask(q); };
+    $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });
+    document.querySelectorAll(".examples a").forEach((a) =>
+      a.addEventListener("click", () => { $("q").value = a.dataset.q; $("go").click(); }));
+  </script>
+</body>
+</html>

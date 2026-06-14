@@ -1,0 +1,17 @@
+.env
+.git
+.gitignore
+__pycache__/
+*.pyc
+.venv/
+venv/
+data/corpus/
+data/index/
+logs/
+web/
+eval/
+tests/
+.pytest_cache/
+.github/
+.DS_Store
+README.md
