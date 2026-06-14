@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     final_k: int = Field(default=6, alias="FINAL_K")
     # Below this top cosine similarity, retrieval is "weak" -> gated (answer
     # "not found in filings" instead of risking a fabricated financial fact).
-    confidence_threshold: float = Field(default=0.62, alias="CONFIDENCE_THRESHOLD")
+    confidence_threshold: float = Field(default=0.68, alias="CONFIDENCE_THRESHOLD")
 
     # --- Reranker (optional, needs sentence-transformers) ---------------
     reranker_enabled: bool = Field(default=False, alias="RERANKER_ENABLED")

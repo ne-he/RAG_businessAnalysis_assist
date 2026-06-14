@@ -1,0 +1,125 @@
+# Golden evaluation set for the finance-RAG (SEC 10-K).
+# - expected_sources: ticker(s) whose filing SHOULD be retrieved (hit-rate@k).
+# - must_include: lowercase substrings expected in the generated answer (--gen).
+# - type: factual | comparison | out-of-scope
+#   * out-of-scope -> retrieval is expected to be weak (gated == true), no fabrication.
+
+# ---------------- NVIDIA ----------------
+- id: nvda-risk
+  question: "What are NVIDIA's main risk factors?"
+  type: factual
+  expected_sources: [NVDA]
+  must_include: ["risk"]
+
+- id: nvda-datacenter
+  question: "What does NVIDIA say about data center revenue and demand?"
+  type: factual
+  expected_sources: [NVDA]
+  must_include: ["data center"]
+
+- id: nvda-business
+  question: "What is NVIDIA's business and what does it sell?"
+  type: factual
+  expected_sources: [NVDA]
+  must_include: []
+
+- id: nvda-competition
+  question: "How does NVIDIA describe competition in its markets?"
+  type: factual
+  expected_sources: [NVDA]
+  must_include: []
+
+# ---------------- Apple ----------------
+- id: aapl-risk
+  question: "What are the key risk factors Apple discloses?"
+  type: factual
+  expected_sources: [AAPL]
+  must_include: ["risk"]
+
+- id: aapl-segments
+  question: "How does Apple describe its products and revenue segments?"
+  type: factual
+  expected_sources: [AAPL]
+  must_include: []
+
+- id: aapl-mdna
+  question: "What does Apple's MD&A say about its net sales?"
+  type: factual
+  expected_sources: [AAPL]
+  must_include: []
+
+# ---------------- Microsoft ----------------
+- id: msft-cloud
+  question: "What does Microsoft say about its cloud and Azure business?"
+  type: factual
+  expected_sources: [MSFT]
+  must_include: []
+
+- id: msft-risk
+  question: "What risk factors does Microsoft highlight?"
+  type: factual
+  expected_sources: [MSFT]
+  must_include: ["risk"]
+
+- id: msft-segments
+  question: "What are Microsoft's reportable business segments?"
+  type: factual
+  expected_sources: [MSFT]
+  must_include: []
+
+- id: msft-mdna
+  question: "What does Microsoft's MD&A say about revenue growth?"
+  type: factual
+  expected_sources: [MSFT]
+  must_include: []
+
+# ---------------- Comparisons (multi-company) ----------------
+- id: cmp-risk-nvda-aapl
+  question: "Compare the risk factors of NVIDIA and Apple."
+  type: comparison
+  expected_sources: [NVDA, AAPL]
+  must_include: []
+
+- id: cmp-revenue-drivers
+  question: "Compare the revenue drivers of NVIDIA and Microsoft."
+  type: comparison
+  expected_sources: [NVDA, MSFT]
+  must_include: []
+
+# ---------------- Section-targeted factual ----------------
+- id: nvda-cyber
+  question: "How does NVIDIA approach cybersecurity risk management?"
+  type: factual
+  expected_sources: [NVDA]
+  must_include: []
+
+- id: aapl-legal
+  question: "What does Apple disclose about legal proceedings?"
+  type: factual
+  expected_sources: [AAPL]
+  must_include: []
+
+- id: msft-properties
+  question: "What does Microsoft say about its properties and facilities?"
+  type: factual
+  expected_sources: [MSFT]
+  must_include: []
+
+# ---------------- Out-of-scope (must gate, no fabrication) ----------------
+- id: oos-swallow
+  question: "What is the airspeed velocity of an unladen swallow?"
+  type: out-of-scope
+  expected_sources: []
+  must_include: []
+
+- id: oos-weather
+  question: "What will the weather be in Jakarta tomorrow?"
+  type: out-of-scope
+  expected_sources: []
+  must_include: []
+
+- id: oos-stockprice
+  question: "What is Tesla's stock price right now?"
+  type: out-of-scope
+  expected_sources: []
+  must_include: []
