@@ -98,7 +98,7 @@ uvicorn app.main:app --reload
 
 ## Evaluation
 
-`eval/run_eval.py` scores a golden set of {N} questions (factual, comparison, and
+`eval/run_eval.py` scores a golden set of 19 questions (factual, comparison, and
 out-of-scope). Retrieval metrics are cheap; `--gen` also generates and LLM-judges
 answers (throttled for the free tier).
 
