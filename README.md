@@ -69,7 +69,19 @@ support it.
 
 ---
 
-## Quickstart
+## Demo
+
+Once the index is built, the whole thing is one command:
+
+```bash
+python demo.py
+```
+
+It checks the index and the API key, starts the API, serves the web client from
+the same origin, and opens a browser at it. `--port` and `--no-browser` are there
+if you need them.
+
+## Quickstart (first run)
 
 ```bash
 # 1. Install (core deps are light; torch/pgvector are optional)
@@ -84,15 +96,34 @@ python scripts/fetch_edgar.py            # NVDA, AAPL, MSFT (configurable)
 # 4. Build the index (chunk → embed → vector + BM25)
 python scripts/ingest.py
 
-# 5. Ask
+# 5. Ask, on the command line or in the browser
 python scripts/ask.py "What are NVIDIA's main risk factors?"
-
-# 6. Serve (streaming API) + open web/index.html
-uvicorn app.main:app --reload
+python demo.py
 ```
 
 > **SEC requirement:** EDGAR requires a descriptive `User-Agent` with contact
 > info on every request. Set `EDGAR_USER_AGENT` in `.env`.
+
+### When Gemini is not available
+
+The free tier rate-limits generation to a few requests per minute, so a 429 in
+the middle of a demo is routine rather than exotic. Retrieval does not need the
+model, so when generation fails the system keeps the part it already earned:
+
+- transient failures (429, 503, timeouts) are retried once
+- if that fails, the answer degrades to passages quoted directly from the
+  retrieved chunks, with the same citations, labelled as degraded
+- the SSE stream emits an explicit `error` event, so the page says what happened
+  instead of stopping mid-answer with citations on screen and nothing under them
+- `/health` returns 503, not 200, when the pipeline failed to build
+
+Run it with no `GEMINI_API_KEY` to see the degraded path.
+
+One quota is worth knowing before a demo: the free tier allows **1,000 embed
+requests per day**, and retrieval embeds every query, so exhausting it (a couple of
+full re-ingests will) stops the app answering *anything* until the daily reset, not
+just generation. `python demo.py` reports it, and the browser shows one readable
+line rather than the SDK's several-kilobyte JSON error.
 
 ---
 
@@ -193,7 +224,7 @@ and the container in `Dockerfile` just serves.
 finance-rag/
 ├── config.py                 # env-overridable settings
 ├── app/
-│   ├── main.py               # FastAPI: /health, /chat, /chat/stream (SSE)
+│   ├── main.py               # FastAPI: /health, /chat, /chat/stream (SSE) + serves web/
 │   ├── schemas.py · observability.py
 │   └── rag/
 │       ├── loaders.py        # HTML/PDF/txt → text + metadata
@@ -206,7 +237,8 @@ finance-rag/
 ├── scripts/                  # fetch_edgar.py · ingest.py · ask.py
 ├── eval/                     # golden_set.yaml · run_eval.py
 ├── tests/                    # offline pytest (fake embedder, temp dirs)
-├── web/index.html            # streaming test client
+├── demo.py                   # one-command demo: preflight + serve + open browser
+├── web/index.html            # streaming client, served by the API at /
 └── Dockerfile · .github/workflows/ci.yml
 ```
 

@@ -24,6 +24,9 @@
     .tag { display:inline-block; padding:2px 8px; border-radius:6px; background:#1a2030; margin:3px 5px 0 0; }
     .gated { color: #e0a23b; }
     .ok { color: #46c08d; }
+    .banner { display: none; margin-bottom: 12px; padding: 10px 13px; border-radius: 9px;
+              font-size: 13px; border: 1px solid #5a3a1c; background: #241a0e; color: #e6b878; }
+    .banner.fatal { border-color: #5c2630; background: #241318; color: #f0909f; }
     .examples { margin-top: 14px; font-size: 12.5px; color: #6f7892; }
     .examples a { color: #6f9bff; cursor: pointer; text-decoration: none; margin-right: 12px; }
   </style>
@@ -38,6 +41,7 @@
       <button id="go">Ask</button>
     </div>
 
+    <div id="banner" class="banner"></div>
     <div id="answer" class="answer">Answers will stream here…</div>
     <div id="meta" class="meta"></div>
 
@@ -51,12 +55,22 @@
   </div>
 
   <script>
-    const API = location.origin.includes("file") ? "http://localhost:8000" : location.origin;
+    // Served from the API itself (python demo.py), so same-origin is the normal case.
+    // The localhost fallback only matters if someone still opens this file directly.
+    const API = location.protocol === "file:" ? "http://localhost:8000" : location.origin;
     const $ = (id) => document.getElementById(id);
+
+    function showBanner(text, fatal) {
+      const el = $("banner");
+      el.textContent = text;
+      el.className = "banner" + (fatal ? " fatal" : "");
+      el.style.display = "block";
+    }
 
     async function ask(question) {
       $("answer").textContent = "";
       $("meta").innerHTML = "";
+      $("banner").style.display = "none";
       $("go").disabled = true;
       try {
         const resp = await fetch(API + "/chat/stream", {
@@ -64,6 +78,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: question, history: [] }),
         });
+        if (!resp.ok) throw new Error(`API returned ${resp.status} ${resp.statusText}`);
         const reader = resp.body.getReader();
         const dec = new TextDecoder();
         let buf = "";
@@ -79,11 +94,17 @@
             const ev = JSON.parse(line);
             if (ev.type === "sources") renderMeta(ev);
             else if (ev.type === "token") $("answer").textContent += ev.text;
+            else if (ev.type === "error") showBanner(
+              ev.recovered
+                ? "The model is unavailable (" + ev.message + "). Showing the retrieved filing text instead."
+                : "The answer was cut off: " + ev.message,
+              !ev.recovered
+            );
             else if (ev.type === "done") addLatency(ev.latency_ms);
           }
         }
       } catch (e) {
-        $("answer").textContent = "Error: " + e.message + "\n\nIs the API running? (uvicorn app.main:app)";
+        showBanner("Could not reach the API: " + e.message + ". Start it with: python demo.py", true);
       } finally {
         $("go").disabled = false;
       }
@@ -100,7 +121,10 @@
       (ev.sources || []).forEach((s) => { html += `<span class="tag">${s.citation}</span>`; });
       $("meta").innerHTML = html;
     }
-    function addLatency(ms) { $("meta").innerHTML += `<div style="margin-top:6px">latency ${ms} ms</div>`; }
+    function addLatency(ms) {
+      if (ms == null) return;  // a stream that died has no meaningful latency
+      $("meta").innerHTML += `<div style="margin-top:6px">latency ${ms} ms</div>`;
+    }
 
     $("go").onclick = () => { const q = $("q").value.trim(); if (q) ask(q); };
     $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });

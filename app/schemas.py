@@ -30,3 +30,7 @@ class ChatResponse(BaseModel):
     top_cosine: float
     filters: dict = Field(default_factory=dict)
     latency_ms: float
+    # True when the language model was unreachable and `answer` is quoted from the
+    # retrieved chunks instead of written. `notice` carries the short reason.
+    degraded: bool = False
+    notice: str | None = None

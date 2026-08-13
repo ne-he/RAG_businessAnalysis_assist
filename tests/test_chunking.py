@@ -45,6 +45,49 @@ def test_split_long_splits_and_keeps_overlap():
     assert chunks[1].startswith(chunks[0][-overlap:])
 
 
+def test_long_paragraph_is_not_overlapped_twice():
+    """A chunk must never open with a copy of its own first `overlap` characters.
+
+    The sliding-window branch steps by `size - overlap`, and the stitching pass below
+    it also prepended the previous chunk's tail, so the two overlaps landed on top of
+    each other and every windowed chunk began by repeating itself verbatim. Measured
+    on the built index this hit 458 of 947 chunks and 8.2% of all corpus text, which
+    is embedded, BM25-indexed and sent to the model as context.
+
+    Distinct characters are used instead of runs of "a" because repeated filler
+    cannot tell a real overlap from a duplicated one.
+    """
+    overlap, size = 20, 100
+    para = "".join(chr(ord("a") + i % 26) for i in range(500))
+    chunks = _split_long(para, size, overlap)
+
+    assert len(chunks) > 1
+    for chunk in chunks:
+        assert chunk[:overlap] != chunk[overlap + 1 : 2 * overlap + 1], (
+            f"chunk repeats its own opening {overlap} chars: {chunk[: 2 * overlap]!r}"
+        )
+
+
+def test_long_paragraph_chunks_still_overlap_once():
+    """The fix must not remove overlap, only stop applying it twice."""
+    overlap, size = 20, 100
+    para = "".join(chr(ord("a") + i % 26) for i in range(500))
+    chunks = _split_long(para, size, overlap)
+
+    for prev, cur in zip(chunks, chunks[1:]):
+        assert cur.startswith(prev[-overlap:]), "context continuity was lost"
+
+
+def test_long_paragraph_covers_the_whole_text():
+    """No characters may be dropped between chunks."""
+    overlap, size = 20, 100
+    para = "".join(chr(ord("a") + i % 26) for i in range(500))
+    chunks = _split_long(para, size, overlap)
+
+    rebuilt = chunks[0] + "".join(c[overlap:] for c in chunks[1:])
+    assert rebuilt.replace("\n", "") == para
+
+
 # ---- split_into_sections -------------------------------------------------
 
 def test_detects_major_items():

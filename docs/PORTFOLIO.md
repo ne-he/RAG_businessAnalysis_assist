@@ -109,6 +109,51 @@ run. Embeddings are disk-cached so re-ingests are nearly free.
 index (cosine) so anyone can clone and run. Flip `VECTOR_STORE=supabase` for
 pgvector — the table + RPC SQL ships in the README.
 
+**Overlap applied twice, and the obvious fix was the wrong one.** When generation is
+unavailable the system answers by quoting the retrieved chunks. The first time I
+read that output, every passage opened by repeating its own first 200 characters and
+then continuing. The splitter has two paths: paragraph assembly, and a sliding
+window for a single paragraph longer than the chunk size. The window steps by
+`size - overlap`, and a later stitching pass prepended the previous chunk's tail to
+*every* chunk, so windowed chunks received the overlap twice. Measured on the built
+index: **458 of 947 chunks affected, 8.2% of all corpus text** duplicated. Invisible
+in citations, which is why it survived, but embedded, BM25-indexed and spent as
+context on every query.
+
+The obvious fix is to stop stepping back and let the stitching handle it. I did
+that, re-ingested, and re-ran the eval: **retrieval hit-rate fell from 16/16 to
+14/16, and both losses were comparison questions.** The stride was not redundant
+with the stitching, it was doing real work: overlapping windows are what keep a fact
+sitting near a chunk boundary whole inside the next window, and comparison questions
+need coverage of two companies inside the same top-k. So the stride stays and the
+stitching yields instead, skipping any chunk that already overlaps its predecessor.
+Three tests pin the result: no chunk repeats its own opening, consecutive chunks
+still overlap exactly once, and reassembling the chunks reproduces the source text.
+
+The generalisable part is that the eval harness caught this, not review. A change
+that is obviously correct locally can still cost two points of recall, and without a
+number attached to the old behaviour there is no way to know.
+
+> **Measurement status.** The 16/16 and 14/16 figures are both measured. The final
+> configuration (stride kept, stitching skipped for windowed chunks) is unit-tested
+> but not yet re-scored end to end: rebuilding the index twice in one day exhausted
+> the free tier's 1,000 embed requests per day. The shipped index is the original
+> one, which the numbers in section 7 describe. Re-run `python scripts/ingest.py`
+> and `python eval/run_eval.py` once the daily quota resets to pick up the fix.
+
+**A demo that degrades instead of dying.** The free tier allows only a few
+generations per minute, so a 429 mid-demo is routine. The SSE contract emits
+`sources` *before* the first token, and the browser client only handled a failed
+`fetch`, not a stream that died after a successful one. The failure mode was
+therefore the worst available: citations render, then nothing, forever, with no
+error anywhere. Now transient failures retry once, and if generation is still
+unreachable the answer falls back to passages quoted from the chunks retrieval
+already found, labelled as degraded and still fully cited. The stream emits an
+explicit `error` event carrying a reason that never includes the API key. The retry
+window deliberately closes after the first token, because replaying a stream that
+has already reached the screen would duplicate text. `/health` returns 503 instead
+of a decorative `{"status": "ok"}` when the pipeline failed to build.
+
 ---
 
 ## 7. Measured results
@@ -150,7 +195,11 @@ pip install -r requirements.txt
 cp .env.example .env                 # set GEMINI_API_KEY + EDGAR_USER_AGENT
 python scripts/fetch_edgar.py        # download real 10-K filings
 python scripts/ingest.py             # chunk → embed → index
-python scripts/ask.py "What are NVIDIA's main risk factors?"
-uvicorn app.main:app --reload        # API + open web/index.html
 pytest -q                            # unit tests
+```
+
+Then, for every run after that:
+
+```bash
+python demo.py                       # preflight, serve API + UI, open a browser
 ```
