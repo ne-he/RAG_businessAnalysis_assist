@@ -115,10 +115,11 @@ read that output, every passage opened by repeating its own first 200 characters
 then continuing. The splitter has two paths: paragraph assembly, and a sliding
 window for a single paragraph longer than the chunk size. The window steps by
 `size - overlap`, and a later stitching pass prepended the previous chunk's tail to
-*every* chunk, so windowed chunks received the overlap twice. Measured on the built
-index: **458 of 947 chunks affected, 8.2% of all corpus text** duplicated. Invisible
-in citations, which is why it survived, but embedded, BM25-indexed and spent as
-context on every query.
+*every* chunk, so windowed chunks received the overlap twice. Diffing the rebuilt
+index against the old one: **532 of 947 chunks opened with a verbatim copy of their
+own first 200 characters, 123,381 characters or 11.0% of the corpus** was duplicated
+text. Invisible in citations, which is why it survived, but embedded, BM25-indexed
+and spent as context on every query.
 
 The obvious fix is to stop stepping back and let the stitching handle it. I did
 that, re-ingested, and re-ran the eval: **retrieval hit-rate fell from 16/16 to
@@ -134,12 +135,18 @@ The generalisable part is that the eval harness caught this, not review. A chang
 that is obviously correct locally can still cost two points of recall, and without a
 number attached to the old behaviour there is no way to know.
 
-> **Measurement status.** The 16/16 and 14/16 figures are both measured. The final
-> configuration (stride kept, stitching skipped for windowed chunks) is unit-tested
-> but not yet re-scored end to end: rebuilding the index twice in one day exhausted
-> the free tier's 1,000 embed requests per day. The shipped index is the original
-> one, which the numbers in section 7 describe. Re-run `python scripts/ingest.py`
-> and `python eval/run_eval.py` once the daily quota resets to pick up the fix.
+All three configurations are measured end to end, not argued:
+
+| Chunking | Chunks | Corpus chars | Hit-rate@6 | Mean top cosine |
+|---|---|---|---|---|
+| Original (overlap applied twice) | 947 | 1,121,666 | 16/16 | 0.738 |
+| Obvious fix (stride removed) | 849 | not kept | **14/16** | not kept |
+| Shipped (stride kept, stitching yields) | 947 | 998,285 | 16/16 | **0.741** |
+
+The shipped row is the interesting one: identical chunk boundaries to the original,
+123,381 fewer characters, and the same perfect hit-rate with a slightly *higher* mean
+cosine. Removing text that a chunk had already said sharpened its embedding a little
+rather than costing recall.
 
 **A demo that degrades instead of dying.** The free tier allows only a few
 generations per minute, so a 429 mid-demo is routine. The SSE contract emits
@@ -168,7 +175,7 @@ Golden set: **19 questions** (16 factual/comparison + 3 out-of-scope).
 |---|---|---|
 | Retrieval hit-rate@6 | **100%** (16/16) | Hybrid retrieval + metadata filtering route to the right filing every time |
 | Out-of-scope gate accuracy | **100%** (3/3) | The system refuses unanswerable questions — no hallucinated numbers |
-| Mean top cosine | **0.738** | Healthy separation from the 0.68 gate |
+| Mean top cosine | **0.741** | Healthy separation from the 0.68 gate |
 | Faithfulness (LLM-judge) | **100%** on completed samples | Generated answers are supported by the retrieved context |
 
 > Note: the free Gemini tier rate-limits generation (~20/min), so a full 38-call

@@ -146,7 +146,7 @@ python eval/run_eval.py --gen    # + answer match + faithfulness
 |---|---|
 | Retrieval hit-rate@6 | **16/16 = 100%** (right company's filing retrieved) |
 | Out-of-scope gate accuracy | **3/3 = 100%** (refused, no fabrication) |
-| Mean top cosine | **0.738** |
+| Mean top cosine | **0.741** |
 | Faithfulness (LLM-judge, sampled) | **100%** on completed samples* |
 
 \* The free-tier Gemini generation quota (~20 req/min for `gemini-2.5-flash`)
