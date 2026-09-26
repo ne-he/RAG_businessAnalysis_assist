@@ -1,15 +1,19 @@
-# FinSight — SEC 10-K RAG
+# FinSight v1: SEC 10-K RAG
+
+> **Superseded.** This is FinSight v1, the original Python prototype, and it was never deployed.
+> The live, rewritten version is **FinSight v2**: https://finsight-v2-nine.vercel.app
+> (repo [ne-he/finsight-v2](https://github.com/ne-he/finsight-v2)). The numbers below describe v1 only.
 
 A production-grade Retrieval-Augmented Generation system that answers questions
 about public companies **strictly from their SEC 10-K filings**, with exact
 citations down to the filing section. Ask *"What are NVIDIA's main risk factors?"*
 or *"Compare the revenue drivers of NVIDIA and Microsoft"* and get a grounded,
-cited answer — or an honest *"not found in the filings"* when the documents don't
+cited answer, or an honest *"not found in the filings"* when the documents don't
 support it.
 
 > Built on a hybrid retrieval engine (dense + BM25 + RRF), section-aware 10-K
 > chunking, metadata filtering, and a strict anti-fabrication confidence gate.
-> **Not a Gemini wrapper** — see the table below.
+> **Not a Gemini wrapper**: see the table below.
 
 ---
 
@@ -25,8 +29,8 @@ support it.
 | Hallucination control | Hope | **Confidence gate** → "not found in filings" |
 | Numbers | May invent figures | Quoted verbatim from context, or refused |
 | Quality | "Looks fine" | **Eval harness**: hit-rate, gate accuracy, faithfulness |
-| Reranking | — | Optional cross-encoder second stage |
-| Serving | — | FastAPI streaming (SSE) + Docker + CI |
+| Reranking | - | Optional cross-encoder second stage |
+| Serving | - | FastAPI streaming (SSE) + Docker + CI |
 
 ---
 
@@ -51,7 +55,7 @@ support it.
 
 ### Pipeline highlights
 - **Multi-format loaders** (`app/rag/loaders.py`): HTML (EDGAR), PDF (optional
-  `pypdf`), and plain text — each paired with a metadata sidecar.
+  `pypdf`), and plain text, each paired with a metadata sidecar.
 - **Section-aware chunking** (`app/rag/chunking.py`): detects the 10-K *Item*
   skeleton (Item 1 Business, 1A Risk Factors, 7 MD&A, 7A Market Risk, 8 Financial
   Statements, …). A largest-span + repeated-header-collapse heuristic ignores the
@@ -63,7 +67,7 @@ support it.
   restricted to that filing *before* ranking; multi-company questions keep all
   mentioned companies so the model can synthesize a comparison.
 - **Confidence gate**: if the best dense cosine is below `CONFIDENCE_THRESHOLD`,
-  the answer degrades to "not found in the available filings" — never a fabricated
+  the answer degrades to "not found in the available filings", never a fabricated
   number.
 - **Rich citations**: `[NVDA FY2026 · Item 1A. Risk Factors]` plus the source URL.
 
@@ -139,7 +143,7 @@ python eval/run_eval.py --gen    # + answer match + faithfulness
 ```
 
 <!-- EVAL_RESULTS -->
-**Corpus:** NVDA (FY2026), AAPL (FY2025), MSFT (FY2025) — 947 chunks.
+**Corpus:** NVDA (FY2026), AAPL (FY2025), MSFT (FY2025): 947 chunks.
 **Golden set:** 19 questions (16 factual/comparison + 3 out-of-scope).
 
 | Metric | Result |
@@ -156,7 +160,7 @@ embeddings and run over the whole set. Live spot-checks confirm grounded, cited
 answers and correct refusals (see examples above).
 
 The confidence threshold (`0.68`) was tuned from this data: legitimate questions
-scored **0.72–0.80**, out-of-scope **0.55–0.63** — a clean separation.
+scored **0.72–0.80**, out-of-scope **0.55–0.63**, a clean separation.
 <!-- /EVAL_RESULTS -->
 
 ---
