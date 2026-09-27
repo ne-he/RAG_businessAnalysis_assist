@@ -3,7 +3,7 @@
 A 10-K has a fixed skeleton of numbered *Items* (Item 1 Business, Item 1A Risk
 Factors, Item 7 MD&A, Item 7A Market Risk, Item 8 Financial Statements, ...).
 This splitter detects those Item boundaries so each chunk knows which section it
-came from — essential for rich citations and metadata filtering.
+came from, essential for rich citations and metadata filtering.
 
 The hard part is that the Table of Contents *also* lists every Item, and the body
 contains cross-references ("see Item 1A"). We disambiguate with a robust

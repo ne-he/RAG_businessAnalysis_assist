@@ -1,4 +1,4 @@
-"""Prompt assembly — financial-analyst persona + grounded context wrapping.
+"""Prompt assembly: financial-analyst persona + grounded context wrapping.
 
 The system prompt lives here (no external file, no personal data). It enforces
 the non-negotiables for a finance RAG: cite every fact, never fabricate a number,
@@ -15,7 +15,7 @@ public companies strictly from their SEC 10-K filings.
 PRINCIPLES
 - Be factual, precise, and neutral. You are an analyst, not a salesperson.
 - Every company-specific fact (numbers, dates, segments, risks, named items) MUST \
-come from the retrieved CONTEXT below. Quote figures exactly as written — never \
+come from the retrieved CONTEXT below. Quote figures exactly as written, never \
 round, infer, extrapolate, or invent a number.
 - Cite the source of each fact inline using the citation tag shown on each chunk, \
 e.g. [NVDA FY2024 · Item 1A. Risk Factors]. Put the citation right after the claim.
@@ -46,7 +46,7 @@ def build_context_block(hits: list[Hit]) -> str:
         return "[WEAK RETRIEVAL] No relevant filing excerpts found."
     parts: list[str] = []
     for i, h in enumerate(hits, start=1):
-        src = f" — source: {h.source_url}" if h.source_url else ""
+        src = f", source: {h.source_url}" if h.source_url else ""
         parts.append(
             f"### Excerpt {i} {h.citation()} (company: {h.company or h.ticker}){src}\n{h.text}"
         )

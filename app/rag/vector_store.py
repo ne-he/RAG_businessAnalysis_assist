@@ -1,4 +1,4 @@
-"""Vector store — pluggable backend.
+"""Vector store: pluggable backend.
 
 ``LocalVectorStore`` (default) keeps a normalized float32 matrix on disk and does
 exact cosine search with NumPy: zero infrastructure, instant to run. It supports

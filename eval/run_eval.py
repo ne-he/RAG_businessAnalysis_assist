@@ -1,10 +1,10 @@
 """Evaluation harness for the finance-RAG.
 
 Measures what actually matters for a financial RAG:
-  * Retrieval hit-rate@k  — was the right company's filing retrieved?
-  * Gate accuracy         — are out-of-scope questions correctly flagged weak?
-  * Answer match (--gen)  — does the generated answer contain expected facts?
-  * Faithfulness (--gen)  — LLM-judge: is the answer supported by the context?
+  * Retrieval hit-rate@k:   was the right company's filing retrieved?
+  * Gate accuracy:          are out-of-scope questions correctly flagged weak?
+  * Answer match (--gen):   does the generated answer contain expected facts?
+  * Faithfulness (--gen):   LLM-judge: is the answer supported by the context?
 
 Generation is throttled (free-tier Gemini = ~5 req/min) and retries on 429.
 
@@ -126,7 +126,7 @@ def main() -> None:
                 if verdict in (0, 1):
                     faithful_total += 1
                     faithful += verdict
-            except Exception as exc:  # noqa: BLE001 — one flaky item shouldn't kill the run
+            except Exception as exc:  # noqa: BLE001 (one flaky item shouldn't kill the run)
                 ans = "!"
                 print(f"   ⚠ gen skipped for {it['id']} ({type(exc).__name__})")
             time.sleep(GEN_THROTTLE_S)

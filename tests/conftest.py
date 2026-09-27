@@ -2,7 +2,7 @@
 
 Everything here runs with NO network and NO Gemini API key. ``FakeEmbedder`` is a
 deterministic bag-of-words hashing embedder (L2-normalized) so a dot product
-behaves like cosine similarity — identical text ~1.0, disjoint text ~0.0. That
+behaves like cosine similarity: identical text ~1.0, disjoint text ~0.0. That
 lets us exercise the real retrieval / filtering / gating logic offline.
 """
 from __future__ import annotations

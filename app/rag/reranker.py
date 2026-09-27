@@ -1,8 +1,8 @@
-"""Reranker — optional second-stage precision booster.
+"""Reranker: optional second-stage precision booster.
 
 Default is ``NoopReranker`` (keep fusion order) so the project runs with no heavy
 deps. Flip ``RERANKER_ENABLED=true`` to load a cross-encoder
-(``sentence-transformers``) that re-scores each (query, chunk) pair directly —
+(``sentence-transformers``) that re-scores each (query, chunk) pair directly,
 much sharper than bi-encoder similarity, at the cost of a torch install.
 """
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Document loaders — multi-format source ingestion.
+"""Document loaders: multi-format source ingestion.
 
 Turns a raw filing on disk into clean text, regardless of format:
 

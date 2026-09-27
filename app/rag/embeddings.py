@@ -1,4 +1,4 @@
-"""Embedding layer — pluggable, with a disk cache and retry/backoff.
+"""Embedding layer: pluggable, with a disk cache and retry/backoff.
 
 ``Embedder`` is the interface; ``GeminiEmbedder`` is the default using Gemini
 ``gemini-embedding-001`` at ``output_dimensionality=768`` via the modern
@@ -86,7 +86,7 @@ class GeminiEmbedder(Embedder):
                 vec = _normalize(list(res.embeddings[0].values))
                 self._cache[key] = vec
                 return vec
-            except Exception as exc:  # noqa: BLE001 — broad on purpose
+            except Exception as exc:  # noqa: BLE001 (broad on purpose)
                 code = getattr(exc, "code", None)
                 if code in (400, 401, 403, 404):
                     raise  # permanent: retrying won't help

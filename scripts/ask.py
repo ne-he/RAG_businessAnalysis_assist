@@ -29,7 +29,7 @@ def _show(result: dict) -> None:
     filt_str = ""
     if filt.get("tickers") or filt.get("years"):
         filt_str = f" filters={filt.get('tickers', [])}/{filt.get('years', [])}"
-    print(f"\n— [{flag}] top_cosine={result['top_cosine']} latency={result['latency_ms']}ms{filt_str}")
+    print(f"\n- [{flag}] top_cosine={result['top_cosine']} latency={result['latency_ms']}ms{filt_str}")
     if result["sources"]:
         print("  sources: " + ", ".join(f"{s['citation']} ({s['score']})" for s in result["sources"]))
 
@@ -39,7 +39,7 @@ def main() -> None:
     if len(sys.argv) > 1:
         _show(pipeline.answer(" ".join(sys.argv[1:])))
         return
-    print("FinSight — ask about NVDA / AAPL / MSFT 10-K (Ctrl+C to quit).")
+    print("FinSight: ask about NVDA / AAPL / MSFT 10-K (Ctrl+C to quit).")
     try:
         while True:
             q = input("\n> ").strip()

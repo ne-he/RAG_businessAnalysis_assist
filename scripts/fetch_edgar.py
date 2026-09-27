@@ -88,7 +88,7 @@ def fetch_ticker(sess: requests.Session, ticker: str, lookup: dict[str, dict], o
     acc_nodash = filing["accession"].replace("-", "")
     url = DOC_URL.format(cik=cik, acc_nodash=acc_nodash, doc=filing["primary_doc"])
 
-    print(f"  • {ticker} ({company}) FY{fy} — downloading {filing['primary_doc']}")
+    print(f"  • {ticker} ({company}) FY{fy}: downloading {filing['primary_doc']}")
     html = _get(sess, url).text
 
     # strip HTML -> clean text (reuse the same cleaner the loaders use)

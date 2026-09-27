@@ -1,4 +1,4 @@
-"""Lightweight observability — append one JSON line per query.
+"""Lightweight observability: append one JSON line per query.
 
 Captures the signals you actually want when debugging a finance RAG in
 production: the query, the top cosine, whether it was gated, the metadata filters

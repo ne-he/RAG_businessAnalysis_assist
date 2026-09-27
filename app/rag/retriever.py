@@ -7,7 +7,7 @@ Pipeline per query:
   2. Dense cosine search (restricted to ``allowed``) + BM25 sparse search.
   3. Fuse both rankings with Reciprocal Rank Fusion (RRF).
   4. Rerank the fused pool (optional cross-encoder).
-  5. Gate on the best dense cosine — below threshold => ``gated`` so the
+  5. Gate on the best dense cosine: below threshold => ``gated`` so the
      generator answers "not found in the filings" instead of fabricating a number.
 """
 from __future__ import annotations

@@ -69,7 +69,7 @@ class SupabaseVectorStore(VectorStore):
         return hits
 
     def persist(self) -> None:
-        pass  # remote store — nothing to persist locally
+        pass  # remote store: nothing to persist locally
 
     def load(self) -> bool:
         return True  # assume the table is already provisioned

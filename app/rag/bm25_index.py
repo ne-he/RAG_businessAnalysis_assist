@@ -1,9 +1,9 @@
 """Sparse keyword index (BM25).
 
-Catches exact-term matches that dense embeddings miss — tickers, GAAP line items
+Catches exact-term matches that dense embeddings miss: tickers, GAAP line items
 ("deferred revenue"), product names, dollar figures. Fused with dense results via
 RRF in the retriever. Persisted as plain JSON (corpus + ids) and the BM25 index
-is rebuilt on load — fast for a filings-scale corpus.
+is rebuilt on load, fast for a filings-scale corpus.
 """
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-# FinSight — Portfolio Report
+# FinSight: Portfolio Report
 
 > A production-grade RAG system that answers questions about public companies
 > strictly from their SEC 10-K filings, with section-level citations and a strict
@@ -13,7 +13,7 @@ measured results.**
 ## 1. One-line pitch
 
 > "I built a financial-analysis chatbot that answers questions from real SEC 10-K
-> filings — hybrid retrieval, company/year metadata filtering, and a confidence
+> filings: hybrid retrieval, company/year metadata filtering, and a confidence
 > gate that makes it say *'not found in the filings'* instead of hallucinating a
 > number. It's measured with an eval harness, not vibes."
 
@@ -21,7 +21,7 @@ measured results.**
 
 ## 2. The problem it solves
 
-LLMs are confidently wrong about financial facts — they hallucinate revenue
+LLMs are confidently wrong about financial facts: they hallucinate revenue
 numbers, mix up fiscal years, and cite nothing. For anything finance-related that
 is unacceptable. FinSight grounds every company-specific claim in the actual
 filing text and cites it down to the section (e.g. *Item 1A. Risk Factors*), and
@@ -63,18 +63,18 @@ optional Supabase pgvector · optional cross-encoder reranker.
 
 ## 5. The six things that make it more than a "wrapper"
 
-1. **Multi-format document loaders** — HTML (EDGAR), PDF, and text, each with a
+1. **Multi-format document loaders**: HTML (EDGAR), PDF, and text, each with a
    metadata sidecar so provenance travels with the content.
-2. **Section-aware 10-K chunking** — detects the *Item* skeleton (Business, Risk
+2. **Section-aware 10-K chunking**: detects the *Item* skeleton (Business, Risk
    Factors, MD&A, Market Risk, Financial Statements…). Every chunk carries
    `company / ticker / fiscal_year / section / source_url`.
-3. **Hybrid retrieval + RRF** — dense semantic search *and* BM25 keyword search
+3. **Hybrid retrieval + RRF**: dense semantic search *and* BM25 keyword search
    (for tickers, GAAP line items, exact figures) fused with Reciprocal Rank Fusion.
-4. **Metadata filtering** — "NVIDIA 2024" restricts search to that filing before
+4. **Metadata filtering**: "NVIDIA 2024" restricts search to that filing before
    ranking; multi-company questions keep all mentioned companies for comparison.
-5. **Confidence gate (anti-fabrication)** — below a tuned cosine threshold the
+5. **Confidence gate (anti-fabrication)**: below a tuned cosine threshold the
    system answers "not found in the filings" rather than risk a fabricated number.
-6. **Evaluation harness** — a golden set scored for retrieval hit-rate, gate
+6. **Evaluation harness**: a golden set scored for retrieval hit-rate, gate
    accuracy, answer fact-match, and faithfulness (LLM-as-judge).
 
 ---
@@ -84,7 +84,7 @@ optional Supabase pgvector · optional cross-encoder reranker.
 **Section detection vs. the Table of Contents.** A 10-K lists every *Item* twice:
 once in the Table of Contents and again as the real section. Worse, the financial
 statements stamp "Item 8" on *every page*, so a naive boundary detector shattered
-Microsoft's filing into tiny fragments — it captured only **15%** of the document.
+Microsoft's filing into tiny fragments: it captured only **15%** of the document.
 Fix: collapse consecutive repeats of the same Item heading, then keep the
 **largest** span per Item. Coverage jumped to **88–92%** across all three filings
 (Microsoft: 53 → 378 chunks).
@@ -92,7 +92,7 @@ Fix: collapse consecutive repeats of the same Item heading, then keep the
 **Tuning the confidence gate from data, not guesswork.** I plotted the top-cosine
 of every eval question. Legitimate questions clustered at **0.72–0.80**;
 out-of-scope ones at **0.55–0.63**. There was a clean gap, so I set the threshold
-at **0.68** — out-of-scope questions gate, real questions don't. Measured, not
+at **0.68**: out-of-scope questions gate, real questions don't. Measured, not
 guessed.
 
 **The deprecated-SDK / dead-model trap.** Google's `google.generativeai` SDK is
@@ -107,7 +107,7 @@ run. Embeddings are disk-cached so re-ingests are nearly free.
 
 **Local-first, production-ready.** Default vector store is a zero-infra NumPy
 index (cosine) so anyone can clone and run. Flip `VECTOR_STORE=supabase` for
-pgvector — the table + RPC SQL ships in the README.
+pgvector. The table + RPC SQL ships in the README.
 
 **Overlap applied twice, and the obvious fix was the wrong one.** When generation is
 unavailable the system answers by quoting the retrieved chunks. The first time I
@@ -165,7 +165,7 @@ of a decorative `{"status": "ok"}` when the pipeline failed to build.
 
 ## 7. Measured results
 
-Corpus: latest 10-K for **NVDA (FY2026), AAPL (FY2025), MSFT (FY2025)** —
+Corpus: latest 10-K for **NVDA (FY2026), AAPL (FY2025), MSFT (FY2025)**:
 **947 chunks**, 88–92% text coverage.
 
 <!-- RESULTS_TABLE -->
@@ -174,7 +174,7 @@ Golden set: **19 questions** (16 factual/comparison + 3 out-of-scope).
 | Metric | Result | What it proves |
 |---|---|---|
 | Retrieval hit-rate@6 | **100%** (16/16) | Hybrid retrieval + metadata filtering route to the right filing every time |
-| Out-of-scope gate accuracy | **100%** (3/3) | The system refuses unanswerable questions — no hallucinated numbers |
+| Out-of-scope gate accuracy | **100%** (3/3) | The system refuses unanswerable questions: no hallucinated numbers |
 | Mean top cosine | **0.741** | Healthy separation from the 0.68 gate |
 | Faithfulness (LLM-judge) | **100%** on completed samples | Generated answers are supported by the retrieved context |
 
